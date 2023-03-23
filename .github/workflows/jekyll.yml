@@ -3,10 +3,10 @@ name: jekyll
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
 jobs:
   jekyll:
     runs-on: ubuntu-20.04
