@@ -1,8 +1,9 @@
-theme: minima
-name: "Volodya Lombrozo"
 title: "Volodya Lombrozo"
-author:
-  name: "Volodya Lombrozo"
-  email: "volodya.lombrozo@gmail.com"
-encoding: utf-8
+email: "volodya.lombrozo@gmail.com"
+name: "Volodya Lombrozo"
 description: "The personal blog of Volodya Lombrozo"
+encoding: utf-8
+
+theme: minima
+plugins:
+  - jekyll-feed
