@@ -1,1 +1,1 @@
-This is my blog: www.volodya-lombrozo.github.io
+This is my blog: https://volodya-lombrozo.github.io
