@@ -33,19 +33,22 @@ sampling profiler in rare cases.
 ## Plain example
 
 As a first step I decided to check a simple example that shows the difference
-between approaches and how much does it cost to use OOP comparing with the 
+between approaches and how much does it cost to use OOP comparing with the
 simple procedural approach.
 
 Let's imagine we have the next class implemented the simple procedural approach
 with static methods:
+
 ```java
 class ExampleProcedure {
     private static int prime(int u) {
         return u;
     }
+
     private static int discounted(int u) {
         return prime(u) / 2;
     }
+
     public static void main(String... args) throws InterruptedException {
         int sum = 0;
         for (int i = 0; i < 2_000_000L; ++i) {
@@ -55,7 +58,9 @@ class ExampleProcedure {
     }
 }
 ```
+
 and OOP approach with Decorator pattern:
+
 ```java
 class ExampleOOP {
     public static void main(String... args) throws InterruptedException {
@@ -74,9 +79,11 @@ class ExampleOOP {
 
     static class Discounted implements Book {
         private Book book;
+
         Discounted(Book b) {
             book = b;
         }
+
         @Override
         public int price() {
             return book.price() / 2;
@@ -85,9 +92,11 @@ class ExampleOOP {
 
     static class Prime implements Book {
         private int usd;
+
         Prime(int u) {
             usd = u;
         }
+
         @Override
         public int price() {
             return usd;
@@ -95,6 +104,68 @@ class ExampleOOP {
     }
 }
 ```
-This examples shows the next results produced by VisualVM:
-1. ExampleProcedure: 
-2. ExampleOOP: Allocated objects 4_000_000, Allocated bytes: 64_000_000, Uptime: 9 sec
+
+The results produced by JMH (with warmup and many invocations):
+
+1. ExampleProcedure: Allocated objects: 0, Allocated bytes: 0, Average execution
+   time: 1.127 ms
+2. ExampleOOP: Allocated objects 4_000_000, Allocated bytes: 64_000_000,
+   Average execution time: 8.025 ms
+
+JMH configuration is common for all tests:
+
+```java
+new Runner(
+    new OptionsBuilder()
+    .forks(1)
+    .warmupIterations(1)
+    .measurementIterations(1)
+    .warmupTime(TimeValue.seconds(3))
+    .measurementTime(TimeValue.seconds(3))
+    .mode(Mode.AverageTime)
+    .timeUnit(TimeUnit.MILLISECONDS)
+    .build()
+    ).run();
+```
+
+The results produced by calculating time manually using `System.nanoTime()`
+command with GC:
+
+1. ExampleProcedure: Allocated objects: 0, Allocated bytes: 0, Average execution
+   time: 8 ms
+2. ExampleOOP: Allocated objects 4_000_000, Allocated bytes: 64_000_000,
+   Average execution time: 33 ms
+
+As you can see, the OOP approach is much slower than the procedural one (~x8).
+But why OOP approach cost so much?
+
+## Garbage Collection
+
+Let's try to disable garbadge collection and check the results again:
+
+I've disabled GC by using EpsilonGC:
+
+```
+-Xmx12294M -Xms12294M -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+```
+
+The results produced by JMH (with warmup and many invocations):
+
+1. ExampleProcedure: Allocated objects: 0, Allocated bytes: 0, Average execution
+   time: 1.067 ms
+2. ExampleOOP: Allocated objects 4_000_000, Allocated bytes: 64_000_000,
+   Average execution time: 51.308 ms
+
+The results produced by calculating time manually using `System.nanoTime()`
+command with GC:
+
+1. ExampleProcedure: Allocated objects: 0, Allocated bytes: 0, Average execution
+   time: 6 ms
+2. ExampleOOP: Allocated objects 4_000_000, Allocated bytes: 64_000_000,
+   Average execution time: 42 ms
+
+How does it possible? We don't spend time for GC, but the execution time is
+increased. Apparently, allocating new objects in memory without garbage
+collection can be challenging and inefficient. Disabling garbage collection can
+cause your program to spend more time managing memory, which can slow down its
+overall execution time. 
