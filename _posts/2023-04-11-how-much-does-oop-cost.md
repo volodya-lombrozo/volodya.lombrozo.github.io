@@ -168,4 +168,42 @@ How does it possible? We don't spend time for GC, but the execution time is
 increased. Apparently, allocating new objects in memory without garbage
 collection can be challenging and inefficient. Disabling garbage collection can
 cause your program to spend more time managing memory, which can slow down its
-overall execution time. 
+overall execution time.
+
+I've asked
+the [question](https://stackoverflow.com/questions/75996839/disabling-garbage-collection-in-java-unexpectedly-slows-performance)
+on the StackOverflow and havn't got any answer yet.
+
+Then I continued profiling by YourKit. In order to get more stable results
+I've increased the number of iterations to `40_000_000` for all test examples.
+It worth nothing that YourKit used tracing profiler that significantly increases
+the overhead of the profiling itself. Thus, it's important to analyze the
+results carefully. The results:
+
+1. ExampleProcedure: Allocated objects: 0, Allocated bytes: 0, Average execution
+   time: 9.792 ms
+   ExampleProcedure.java:13 procedure.ExampleProcedure.discounted(int) 3885 ms
+2. ExampleOOP (with GC): Allocated objects 40_000_000, Allocated bytes:
+   640_000_000, Average execution time: 29.193 ms
+   ExampleOOP.java:9 oop.ExampleOOP$Discounted.price() 3873 ms
+   ExampleOOP.java:8 oop.ExampleOOP$Discounted.<init>(ExampleOOP$Book) 3856 ms
+   ExampleOOP.java:8 oop.ExampleOOP$Prime.<init>(int) 3845 ms
+3. ExampleOOP (without GC): Allocated objects 40_000_000, Allocated bytes:
+   640_000_000, Average execution time: 28.347 ms
+   ExampleOOP.java:9 oop.ExampleOOP$Discounted.price() 3719 ms
+   ExampleOOP.java:8 oop.ExampleOOP$Discounted.<init>(ExampleOOP$Book) 3689 ms
+   ExampleOOP.java:8 oop.ExampleOOP$Prime.<init>(int) 3675 ms
+
+As you can see, the results are more or less the same between ExampleOOP with GC
+and ExampleOOP without GC. It means that GC almost doesn't affect the execution
+time. Also, it's important to note that YourKit profiler gives more realistic 
+results comparing with JMH and doesn't show the problem with disabling GC.
+
+The next problem which I see is that the OOP approach spends more time for the 
+loop in the `main` method:
+1. ExampleProcedure: 5907 ms
+2. ExampleOOP (with GC): 17619 ms
+3. ExampleOOP (without GC): 17264 ms
+
+The possible reason in the dynamic dispatching. The JVM has to check the type
+of the object and choose the appropriate method to execute.
