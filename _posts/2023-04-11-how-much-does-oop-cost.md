@@ -49,7 +49,7 @@ class ExampleProcedure {
         return prime(u) / 2;
     }
 
-    public static void main(String... args) throws InterruptedException {
+    public static void main(String... args) {
         int sum = 0;
         for (int i = 0; i < 2_000_000L; ++i) {
             sum += Example.discounted(i);
@@ -63,7 +63,7 @@ and OOP approach with Decorator pattern:
 
 ```java
 class ExampleOOP {
-    public static void main(String... args) throws InterruptedException {
+    public static void main(String... args) {
         Thread.sleep(1000);
         int sum = 0;
         for (int i = 0; i < 2_000_000L; ++i) {
@@ -196,14 +196,66 @@ results carefully. The results:
 
 As you can see, the results are more or less the same between ExampleOOP with GC
 and ExampleOOP without GC. It means that GC almost doesn't affect the execution
-time. Also, it's important to note that YourKit profiler gives more realistic 
+time. Also, it's important to note that YourKit profiler gives more realistic
 results comparing with JMH and doesn't show the problem with disabling GC.
 
-The next problem which I see is that the OOP approach spends more time for the 
+The next problem which I see is that the OOP approach spends more time for the
 loop in the `main` method:
+
 1. ExampleProcedure: 5907 ms
 2. ExampleOOP (with GC): 17619 ms
 3. ExampleOOP (without GC): 17264 ms
 
 The possible reason in the dynamic dispatching. The JVM has to check the type
 of the object and choose the appropriate method to execute.
+____
+Let's instrument our application with tracing profiler from YourKit and check
+the actual time spend for each method.
+
+We will monitor three different cases of the `main` method, where we will just
+use different number of created objects. In other words, the code remain the
+same and differs only in the line where we create decorated object:
+
+```java
+1)Book b=new Prime(i);
+    2)Book b=new Discounted(new Prime(i));
+    3)Book b=new Discounted(new Discounted(new Prime(i)));
+```
+
+Also, it worth mention that we use the same number of iterations for all
+tests `40_000_000`.
+
+1. Results of single object assignment `Book b = new Prime(i)`:
+
+one.oop.ExampleOOP.main(String[]) 126349 ms (64402 ms own time)
+ExampleOOP.java:8 one.oop.ExampleOOP$Prime.<init>(int) 61947 ms
+
+2. Results of two objects assignment `Book b = new Discounted(new Prime(i))`:
+
+two.oop.ExampleOOP.main(String[]) 390384 ms (199601 ms own time)
+ExampleOOP.java:8 two.oop.ExampleOOP$Discounted.<init>(ExampleOOP$Book) 63612 ms
+ExampleOOP.java:9 two.oop.ExampleOOP$Discounted.price() 63587 ms
+ExampleOOP.java:8 two.oop.ExampleOOP$Prime.<init>(int) 63584 ms
+
+3. Results of three objects assignment
+   `Book b = new Discounted(new Discounted(new Prime(i)))`:
+
+three.oop.ExampleOOP.main(String[]) 678616 ms (276364 ms own time)
+ExampleOOP.java:9 three.oop.ExampleOOP$Discounted.price() 202312 ms
+ExampleOOP.java:8 three.oop.ExampleOOP$Discounted.<init>(ExampleOOP$Book) 133239
+ms 80000000
+ExampleOOP.java:8 three.oop.ExampleOOP$Prime.<init>(int) 66701 ms
+
+As you can see, the time spend for the loop in the `main` method increases
+as expected. But the time spend for creating
+objects `ExampleOOP$Prime.<init>(int)`
+and `ExampleOOP$Discounted.<init>(ExampleOOP$Book)` is almost the same for all
+cases. On the other hand, the time spend for the method `ExampleOOP$main()`
+increases significantly (). It means that the time spend for the dynamic
+method dispatching is the main reason of the performance degradation in that
+examples which was quite broad explained and
+measured [here](https://shipilev.net/blog/2015/black-magic-method-dispatch/).
+
+Actually it is the important side effect of applying the OOP approach comparing 
+with the plain procedural approach.
+
