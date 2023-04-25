@@ -92,35 +92,35 @@ class ExampleOOP {
         }
         System.out.printf("Total: %d\n", sum);
     }
+}
 
-    interface Book {
-        int price();
+interface Book {
+    int price();
+}
+
+static class Discounted implements Book {
+    private Book book;
+
+    Discounted(Book b) {
+        book = b;
     }
 
-    static class Discounted implements Book {
-        private Book book;
+    @Override
+    public int price() {
+        return book.price() / 2;
+    }
+}
 
-        Discounted(Book b) {
-            book = b;
-        }
+static class Prime implements Book {
+    private int usd;
 
-        @Override
-        public int price() {
-            return book.price() / 2;
-        }
+    Prime(int u) {
+        usd = u;
     }
 
-    static class Prime implements Book {
-        private int usd;
-
-        Prime(int u) {
-            usd = u;
-        }
-
-        @Override
-        public int price() {
-            return usd;
-        }
+    @Override
+    public int price() {
+        return usd;
     }
 }
 ```
@@ -176,10 +176,10 @@ results:
 
 | Approach      | Profiling tool    | Time (ms) |
 |---------------|-------------------|-----------|
-| 1. OOP        | YourKit (tracing) |           |
-| 2. Procedural | YourKit (tracing) |           |
-| 3. OOP        | JMH benchmark     |           |
-| 4. Procedural | JMH benchmark     |           |
+| 1. OOP        | YourKit (tracing) | 401010    |
+| 2. Procedural | YourKit (tracing) | 127997    |
+| 3. OOP        | JMH benchmark     | 84.561    |
+| 4. Procedural | JMH benchmark     | 12.211    |
 
 Interestingly, we found that both tools provided almost identical results,
 showing that the OOP approach was around four times slower than the plain
@@ -192,11 +192,89 @@ this theory to the test to confirm it.
 
 The simples way to check the impact of GC is to disable it!
 
+```shell
+-Xmx12294M -Xms12294M -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+```
+
+| Approach      | Profiling tool    | Time (ms) |
+|---------------|-------------------|-----------|
+| 1. OOP        | YourKit (tracing) | 405370    |
+| 2. Procedural | YourKit (tracing) | 126146    |
+| 3. OOP        | JMH benchmark     | 437.963   |
+| 4. Procedural | JMH benchmark     | 12.191    |
+
 # Side effects
+
+Count execution time using different numbers of invocations and objects
+
+"Two objects"
+
+```java
+new Discounted(new Prime(i));
+```
+
+"Three objects"
+
+```java
+new Discounted(new Discounted(new Prime(i)));
+```
+
+"Two static calls"
+
+```java
+discounted(prime(i));
+```
+
+"Three static calls"
+
+```java
+discounted(discounted(prime(i)));
+```
+
+| Approach                | Profiling tool    | Time (ms) |
+|-------------------------|-------------------|-----------|
+| 1. OOP - "two"          | YourKit (tracing) | 401010    |
+| 2. Procedural - "two"   | YourKit (tracing) | 127997    |
+| 3. OOP - "three"        | YourKit (tracing) | 681304    |
+| 4. Procedural - "three" | YourKit (tracing) | 252314    |
+
+OOP degradation between "two" and "three" ~ 70%
+Procedural degradation between "two" and "three" ~ 97%
+Why not the same?
+
+Procedural "two" Total 127877 ms
+
+| Approach           | Invocations | Time (ms) | Percent (self) |
+|--------------------|-------------|-----------|----------------|
+| 1. main loop       | 1           | 64976     | 51%            |
+| 2. discounted(int) | 40.000.000  | 62901     | 49%            |
+
+Procedural "three" Total 252314 ms
+
+| Approach           | Invocations | Time (ms) | Percent (self) |
+|--------------------|-------------|-----------|----------------|
+| 1. main loop       | 1           | 128517    | 51%            |
+| 2. discounted(int) | 80.000.000  | 123797    | 49%            |
+
+OOP "two" Total 400908 ms
+
+| Approach                    | Invocations | Time (ms) | Percent (self) |
+|-----------------------------|-------------|-----------|----------------|
+| 1. main loop                | 1           | 204724    | 52%            |
+| 2. Discounted.\<init>(Book) | 40.000.000  | 65515     | 16%            |
+| 3. Discounted.price         | 40.000.000  | 65354     | 16%            |
+| 4. Prime.\<init>(int)       | 40.000.000  | 65315     | 16%            |
+
+OOP "three" Total 681181 ms
+
+| Approach                    | Invocations | Time (ms) | Percent (self) |
+|-----------------------------|-------------|-----------|----------------|
+| 1. main loop                | 1           | 276440    | 40%            |
+| 2. Discounted.\<init>(Book) | 80.000.000  | 134591    | 20%            |
+| 3. Discounted.price         | 40.000.000  | 203174    | 30%            |
+| 4. Prime.\<init>(int)       | 40.000.000  | 66976     | 10%            |
 
 # Conclusion
 
-
-
-
+# What is next?
 

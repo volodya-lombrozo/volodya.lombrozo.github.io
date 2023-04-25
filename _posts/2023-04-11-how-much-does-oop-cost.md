@@ -259,3 +259,4 @@ measured [here](https://shipilev.net/blog/2015/black-magic-method-dispatch/).
 Actually it is the important side effect of applying the OOP approach comparing 
 with the plain procedural approach.
 
+
