@@ -46,6 +46,16 @@ https://github.com/spring-guides/gs-rest-service
 
 # Apache Kafka
 
+# Apache Derby
+
+* Total objects created: 935622
+
+* Total constructors invoked (<init>):  1614040
+* Total methods invoked: 61683273
+* Time spent in constructors: ~ 9981,6 ms
+* Time spent in all methods: ~ 292903,9 ms
+* Final percent: 3%
+
 # H2
 
 The next noticeable application that we can test is H2 database. It's a very
