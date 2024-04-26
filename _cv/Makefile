@@ -8,7 +8,7 @@ clean:
 	rm -rf $(PDFS)
 	rm -rf _minted*
 
-%.pdf: %.tex yb.cls aspell.en.pws
+%.pdf: %.tex vl.cls aspell.en.pws
 	latexmk -pdf $<
 	texqc --ignore 'You have requested document class' $<
 	texsc $<

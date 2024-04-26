@@ -1,8 +1,8 @@
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{yb}[21/4/2021 0.1.0 Template for my documents]
+\ProvidesClass{vl}[21/4/2021 0.1.0 Template for my documents]
 \LoadClass[12pt]{article}
 \RequirePackage{xcolor}
-\definecolor{yb-blue}{RGB}{5,60,94}
+\definecolor{vl-gray}{RGB}{42,42,42}
 \RequirePackage{graphicx}
 \RequirePackage{microtype}
 \RequirePackage{libertine}
@@ -21,7 +21,7 @@
 }}
 \fancyfoot[C]{
     \begin{textblock}{2}(0,0){
-        \tikz[x=\TPHorizModule,y=\TPVertModule] \filldraw[fill=yb-blue, draw=none] (0,0) rectangle (2,16);
+        \tikz[x=\TPHorizModule,y=\TPVertModule] \filldraw[fill=vl-gray, draw=none] (0,0) rectangle (2,16);
     }\end{textblock}
 }
 
@@ -47,7 +47,7 @@
 \large
 }
 
-\newcommand\ybPrintPhoto{
+\newcommand\vlPrintPhoto{
 \begin{textblock}{2.4}[1,0](14,1.5){
 \includegraphics[width=\textwidth]{face-460x460.jpeg}
 }\end{textblock}
