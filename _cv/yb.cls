@@ -1,93 +1,65 @@
-\documentclass{yb}
-\RequirePackage{hyperref}
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesClass{yb}[21/4/2021 0.1.0 Template for my documents]
+\LoadClass[12pt]{article}
+\RequirePackage{xcolor}
+\definecolor{yb-blue}{RGB}{5,60,94}
+\RequirePackage{graphicx}
+\RequirePackage{svg}
+\RequirePackage{microtype}
+\RequirePackage{libertine}
+\RequirePackage[absolute]{textpos}
+\TPGrid{16}{16}
+\RequirePackage[top=2\TPVertModule, bottom=2\TPVertModule, left=3\TPHorizModule, right=2\TPHorizModule]{geometry}
+\RequirePackage{tikz}
+\RequirePackage{fancyhdr}
+\pagestyle{fancy}
+\renewcommand{\headrulewidth}{0pt}
+\fancyhf{}
+\fancyfoot[C]{{
+    \ifnum\value{page}=1\else
+    \color{gray} page \thepage{} of \pageref{LastPage}
+    \fi
+}}
+\fancyfoot[C]{
+    \begin{textblock}{2}(0,0){
+        \tikz[x=\TPHorizModule,y=\TPVertModule] \filldraw[fill=yb-blue, draw=none] (0,0) rectangle (2,16);
+    }\end{textblock}
+% \ifnum\value{page}=1
+%   \begin{textblock}{2}[0,1](0,16){
+%     \begin{center}
+%       \includesvg[width=0.5\textwidth]{icon-white.svg}
+%     \end{center}
+%   }\end{textblock}
+% \else\fi
+}
 
-\begin{document}
-    \sffamily
+% Replace this with \RequirePackage{href-ul}
+\RequirePackage[normalem]{ulem}
+\RequirePackage[hidelinks]{hyperref}
+\makeatletter\begingroup
+\catcode`\$=6 %
+\catcode`\#=12 %
+\gdef\href@split$1#$2#$3\\$4{%
+    \hyper@@link{$1}{$2}{\uline{$4}}%
+\endgroup
+}%
+\endgroup\makeatother
 
-    \ybPrintPhoto{}
+\newcommand\nospell[1]{#1}
 
-    {\scshape\bfseries\Large \nospell{Yeg\'or Bugay\'enko}}\newline
-    \href{mailto:yegor256@gmail.com}{yegor256@gmail.com}
+\AtBeginDocument{%
+\setlength{\topskip}{0mm}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\tolerance=2000
+\raggedbottom
+\large
+}
 
-    \vspace{1em}
+\newcommand\ybPrintPhoto{%
+\begin{textblock}{2.4}[1,0](14,1.5){
+\includegraphics[width=\textwidth]{face-460x460.jpeg}
+}\end{textblock}
+}
 
-    Lab Director in \textbf{\href{https://www.huawei.com}{Huawei}} (Russia) since 2019.
-
-    Creator of \href{https://www.eolang.org}{EO}, an object-oriented \textbf{programming language}.
-
-    Founder and CEO of \textbf{\href{https://www.zerocracy.com}{Zerocracy}} since 2016.
-
-    Inventor of eXtremely Distributed Software Development (\href{https://www.xdsd.org}{XDSD}).
-
-    Author of \textbf{\href{https://www.yegor256.com/elegant-objects.html}{Elegant Objects}},
-    an OOP book series, and \href{https://www.yegor256.com/books.html}{a few others}.
-
-    Part-time \textbf{lecturer} in \href{https://www.hse.ru/en/}{HSE}
-    and \href{https://innopolis.university/en/}{Innopolis} universities
-    (\href{https://www.youtube.com/playlist?list=PLaIsQH4uc08y14wCJMeffS2yErN4QpB8m}{video}).
-
-    Hands-on Java/C++/Ruby programmer
-    (4.4K+ \textbf{\href{https://github.com/yegor256}{GitHub}} followers).
-
-    Regular contributor to \textbf{Stack Overflow}
-    (check my \href{https://stackexchange.com/users/63162/yegor256}{100K+ profile}).
-
-    Named author on a few patent applications
-    (e.g. \href{https://www.google.com/patents/US20120023476}{12/840,306}).
-
-    Author of a few academic CS \textbf{publications}
-    (e.g. \href{https://link.springer.com/chapter/10.1007/978-3-642-02152-7_6}{this}),
-    h-index: \href{https://scholar.google.com/citations?user=cYmXh60AAAAJ}{5}.
-
-    Member of \href{http://standards.ieee.org/develop/wg/730.html}{IEEE 730} and
-    \href{https://standards.ieee.org/ieee/1012/7324/}{IEEE P1012} committees.
-
-    Regular \textbf{blogger} at \href{https://www.yegor256.com/}{yegor256.com} since 2014.
-
-    Creator of \href{https://www.zold.io}{Zold}, a cryptocurrency without Blockchain.
-
-    Organizer of \href{https://www.iccq.ru}{\textbf{ICCQ}}, a computer science conference in-coop w/IEEE.
-
-    Proud holder of \textbf{\href{https://github.com/yegor256/blog/blob/master/pdf/certifications/OCMJEA-Feb11.pdf}{SCEA}} and
-    \textbf{\href{https://github.com/yegor256/blog/blob/master/pdf/certifications/PMP-Jun07.pdf}{PMP}} certifications,
-    and \href{https://github.com/yegor256/blog/tree/master/pdf/certifications}{others}.
-
-    Creator of \href{https://www.takes.org}{Takes},
-    \href{https://www.cactoos.org}{Cactoos},
-    \href{https://www.jcabi.com}{JCabi},
-    \href{https://www.rultor.com}{Rultor},
-    \href{https://www.qulice.com}{Qulice} and
-    \href{https://www.yegor256.com/pets.html}{others}.
-
-    \textbf{M.Sc.} in Computer Science,
-    \href{https://en.wikipedia.org/wiki/Oles_Honchar_Dnipro_National_University}{graduated} in 1998.
-
-    Regular \textbf{\href{https://www.yegor256.com/talks.html}{speaker}}
-    at software conferences, incl.
-    \href{https://youtu.be/55mwAbuDrV8}{Joker},
-    \href{https://www.youtube.com/watch?v=20QBvrHq6TA}{JPoint},
-    \href{https://vimeo.com/177215750}{GeeCON},
-    \href{https://www.youtube.com/watch?v=TLM9eN0b6zo}{AgileDays},
-    \href{https://www.youtube.com/watch?v=03PXmPc7Q3g}{\nospell{{\O}redev}},
-    \href{https://www.youtube.com/watch?v=7yTIWFZrXpg}{GeekOUT},
-    \href{https://www.youtube.com/watch?v=vU_x6oK437I}{NDC},
-    \href{https://www.youtube.com/watch?v=GS45LzE3LPQ}{JEEConf}.
-
-    Professional member of ACM and IEEE since 1996.
-
-    Fond of
-    tennis,
-    kyokushin,
-    \href{https://www.yegor256.com/paintings.html}{painting},
-    \href{https://ru.yegor256.com}{politics},
-    and
-    \href{https://www.imdb.com/name/nm15660607}{film making}.
-
-    Active on
-    \href{https://twitter.com/intent/follow?screen_name=yegor256}{X} (13K+),
-    \href{https://www.facebook.com/yegor256}{Facebook} (4K+),
-    \href{https://www.linkedin.com/in/yegor256}{LinkedIn} (5K+),
-    and
-    \href{https://instagram.com/yegor256}{Instagram} (3K+).
-
-\end{document}
+\endinput
