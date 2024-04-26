@@ -4,7 +4,7 @@
 \RequirePackage{xcolor}
 \definecolor{yb-blue}{RGB}{5,60,94}
 \RequirePackage{graphicx}
-\RequirePackage{svg}
+%\RequirePackage{svg}
 \RequirePackage{microtype}
 \RequirePackage{libertine}
 \RequirePackage[absolute]{textpos}
