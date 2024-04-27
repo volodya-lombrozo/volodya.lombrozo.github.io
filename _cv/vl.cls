@@ -2,7 +2,7 @@
 \ProvidesClass{vl}[21/4/2021 0.1.0 Template for my documents]
 \LoadClass[12pt]{article}
 \RequirePackage{xcolor}
-\definecolor{vl-gray}{RGB}{42,42,42}
+\definecolor{vl-color}{RGB}{255, 229, 204}
 \RequirePackage{graphicx}
 \RequirePackage{microtype}
 \RequirePackage{libertine}
@@ -21,7 +21,7 @@
 }}
 \fancyfoot[C]{
     \begin{textblock}{2}(0,0){
-        \tikz[x=\TPHorizModule,y=\TPVertModule] \filldraw[fill=vl-gray, draw=none] (0,0) rectangle (2,16);
+        \tikz[x=\TPHorizModule,y=\TPVertModule] \filldraw[fill=vl-color, draw=none] (0,0) rectangle (2,16);
     }\end{textblock}
 }
 
@@ -49,7 +49,7 @@
 
 \newcommand\vlPrintPhoto{
 \begin{textblock}{2.4}[1,0](14,1.5){
-\includegraphics[width=\textwidth]{face-460x460.jpeg}
+\includegraphics[width=\textwidth]{face.jpeg}
 }\end{textblock}
 }
 
