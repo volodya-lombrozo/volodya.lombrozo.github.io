@@ -6,6 +6,7 @@
 \RequirePackage{graphicx}
 \RequirePackage{microtype}
 \RequirePackage{libertine}
+\RequirePackage{paralist}
 \RequirePackage[absolute]{textpos}
 \TPGrid{16}{16}
 \RequirePackage[top=2\TPVertModule, bottom=2\TPVertModule, left=3\TPHorizModule, right=2\TPHorizModule]{geometry}
