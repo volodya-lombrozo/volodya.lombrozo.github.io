@@ -2,6 +2,7 @@
 *.log
 *.out
 *.pdf
+!recommendations/*.pdf
 *.fdb_latexmk
 *.fls
 *.fdb_latexmk
