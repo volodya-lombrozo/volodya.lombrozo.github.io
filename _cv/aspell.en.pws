@@ -110,7 +110,6 @@ jenkins
 jira
 eclean
 jakarta
-primefaces
 backend
 Staut
 mysql
@@ -123,5 +122,7 @@ Lenoblles
 LOGKU
 gradle
 sonarqube
-Promefaces
 gamification
+primefaces
+Primefaces
+PrimeFaces
