@@ -1,6 +1,6 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{vl}[21/4/2021 0.1.0 Template for my documents]
-\LoadClass[12pt]{article}
+\LoadClass[11pt]{article}
 \RequirePackage{xcolor}
 \definecolor{vl-color}{RGB}{255, 229, 204}
 \RequirePackage{graphicx}
@@ -49,7 +49,7 @@
 }
 
 \newcommand\vlPrintPhoto{
-\begin{textblock}{2.4}[1,0](14,1.5){
+\begin{textblock}{2.1}[1,0](14,1.5){
 \includegraphics[width=\textwidth]{face.jpeg}
 }\end{textblock}
 }
