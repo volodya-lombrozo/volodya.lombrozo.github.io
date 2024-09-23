@@ -19,10 +19,33 @@ You can:
    a [pull request](https://github.com/volodya-lombrozo/volodya-lombrozo.github.io/pulls)
    with the correction.
 
-## How to build and run this blog
+## How to build and run this blog locally
 
 This blog is built using [Jekyll](https://jekyllrb.com/).
-To build and run it locally, you need to have Ruby installed on your machine.
+To build and run it locally, you need to
+have [Ruby](https://www.ruby-lang.org/en/)
+and [Bundler](https://bundler.io) installed on your
+machine.
 Then, you can follow these steps:
 
-- todo
+1) Clone this repository
+
+```bash
+git clone git@github.com:volodya-lombrozo/volodya-lombrozo.github.io.git
+```
+
+2) Install all the required dependencies by Bundler
+
+```bash
+bundle install
+```
+
+3) Build and run the blog locally
+
+```bash
+bundle exec jekyll serve
+```
+
+4) Open your browser and go to [http://localhost:4000](http://localhost:4000)
+   and you will see the blog running locally.
+
