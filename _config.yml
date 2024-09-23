@@ -3,5 +3,11 @@ email: "volodya.lombrozo@gmail.com"
 description: "The personal blog since 2023"
 encoding: utf-8
 
+# Mininal Mistakes theme settings
+# You can read more about the theme
+# here: https://mmistakes.github.io/minimal-mistakes
+theme: minimal-mistakes-jekyll
+minimal_mistakes_skin: "neon"
+
 plugins:
   - jekyll-feed
