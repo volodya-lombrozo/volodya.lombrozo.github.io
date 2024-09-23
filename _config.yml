@@ -3,6 +3,5 @@ email: "volodya.lombrozo@gmail.com"
 description: "The personal blog since 2023"
 encoding: utf-8
 
-theme: minima
 plugins:
   - jekyll-feed
