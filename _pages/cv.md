@@ -1,10 +1,10 @@
 ---
-layout: posts
-title: Some Article
+layout: single
+title: Title of My Page
 author: Volodya Lombrozo
 ---
 
-This article is added for testing purposes.
+My CV is here.
 
 ```java
 public class SomeClass {
