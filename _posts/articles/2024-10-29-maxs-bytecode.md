@@ -12,17 +12,31 @@ to give a high-level overview. Thus, if you are still interested, welcome.
 ## Why Do We Need These Magic Numbers?
 
 There are plenty of sources where you can read about them, of course, but
-let's find the definition in the official JVM specification.
+the most stickt and correct definition
+in [the official JVM specification](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html):
 
-Max Stack
-> max stack
+#### Max Stack
 
-Max Locals
-> max locals
+> The value of the max_stack item gives the maximum depth of the operand stack
+> of this method at any point during execution of the method.
 
-When at first glance, these numbers look differently, and their purpose is
-different, we can actually compute them using approximately the same approach.
-But before delving into details, let's create several useful data structures
+#### Max Locals
+
+> The value of the max_locals item gives the number of local variables in the
+> local variable array allocated upon invocation of this method,
+> including the local variables used to pass parameters to the method on its
+> invocation.
+
+By the way, there are more explanatory definitions in the Oracle documentation:
+[Max Stack](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-2.html#jvms-2.6.2)
+and
+[Max Locals](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-2.html#jvms-2.6.1)
+
+Of course, these numbers serve for different purposes.
+However, we can actually compute them using approximately the same approach, as
+you will see in details later.
+But for now we need
+to define several useful data structures
 that will help us to implement the algorithm.
 
 ## Useful Data Structures
