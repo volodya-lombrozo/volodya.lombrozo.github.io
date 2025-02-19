@@ -1,10 +1,12 @@
 ---
 layout: post
-title: ""
+title: "Thread-Safety Pitfalls in XML Processing or How To Shoot Yourself in The Foot"
 date: 2025-02-19
 ---
 
-Do you think if the method `children()` is thread safe?
+# Thread-Safety Pitfalls in XML Processing or How To Shoot Yourself in The Foot
+
+Do you think the method `children()` below is thread-safe?
 
 ```java
 import java.util.stream.Stream;
@@ -29,35 +31,40 @@ public final class SafeXml {
 }
 ```
 
-Of course, since I'm asking this question, the answer is "No". For those, who
-didn't work with XML in Java (yes, it's still alive), the classes under
-`org.w3c.dom` package are not thread safe. That is. There are no guarantees
-even for reading the data from the XML document in a multi-threaded environment.
+Of course, since I’m asking this question, the answer is **no**.
+For those who haven’t had the _pleasure_ of working with XML in Java (yes, it’s
+still alive), the `org.w3c.dom` package is not thread-safe.
+There are no guarantees even for just reading data from an XML document in
+a multi-threaded environment.
 
-So, if you decide to run the `children()` method in parallel, you will get
+For more background, here’s
+a [good Stack Overflow thread](https://stackoverflow.com/questions/3439485/java-and-xml-jaxp-what-about-caching-and-thread-safety)
+on the topic.
+
+So, if you decide to run `children()` method in parallel, sooner or later,
+you will encounter something like this:
 
 ```java
 Caused by:java.lang.NullPointerException
     at java.xml/com.sun.org.apache.xerces.internal.dom.CoreDocumentImpl.getNodeListCache(CoreDocumentImpl.java:2283)
     at java.xml/com.sun.org.apache.xerces.internal.dom.ParentNode.nodeListGetLength(ParentNode.java:690)
     at java.xml/com.sun.org.apache.xerces.internal.dom.ParentNode.getLength(ParentNode.java:720)
-    at com.github.lombrozo.xnav.SafeXml.children(SafeXml.java:41)
+    at SafeXml.children(SafeXml.java)
 ```
 
-sooner or later.  (Java uses Xerces as the default implementation of the DOM
-API.)
+(Java uses Xerces as the default implementation of the DOM API.)
 
-For those who are interested, here is a good stackoverflow question about this
-https://stackoverflow.com/questions/3439485/java-and-xml-jaxp-what-about-caching-and-thread-safety
+Let's fix it then?
 
-Let's fix it then!
-Since we are experienced developers, we go to StackOverflow, and here
-is [solution](https://stackoverflow.com/questions/10550900/concurrency-and-reusage-of-org-w3c-dom-node):
+## Attempt #1: Synchronization to the Rescue?
+
+Being seasoned developers, we do what we do best: we Google it. And we
+find [this answer](https://stackoverflow.com/questions/10550900/concurrency-and-reusage-of-org-w3c-dom-node)
+on StackOverflow:
 
 > your only choice is to synchronize all access to the Document/Nodes
 
-
-So, let's add a bit of synchronization to the `children()` method:
+Alright, let’s follow the advice and add some synchronization:
 
 ```java
 public Stream<SafeXml> children(){
@@ -72,18 +79,18 @@ synchronized (this.node){
     }
 ```
 
-Good. Let's test it. Test makes many threads to call `children()` method in
-parallel,
-shows green passes. ... And failed on 269th run. The
-same `NullPointerException`.
-How that? We added synchronization, didn't we?
+Great! Now, let's test it — multiple threads calling `children()` in parallel.
+The test passes... until the 269th run, when the same `NullPointerException`
+pops up again. Wait, what?! Didn’t we **just** add synchronization?
 
-I will try to save your time here and tell you that the problem is that we are
-synchronizing on the `Node` object, but the problem here is that all nodes have
-some internal state which is not thread safe and shared between all the nodes.
+## Attempt #2: Synchronize on the Document
 
-Well, we have the only last resort here: we need to synchronize on the entire
-document.
+[I’ll save you some frustration:]??? the problem is that each DOM `Node` have some
+internal shared state (most likely a cache) across different `Node` instances.
+In other words, synchronizing on a single node isn’t enough — we have to lock
+the entire document.
+
+So, we tweak our code:
 
 ```java
 public final class SafeXml {
@@ -109,29 +116,18 @@ public final class SafeXml {
 }
 ```
 
-We might not like it, but it's the only way to make it work. And this behavior
-is specifically and historically was designed this way in the DOM API.
-If developers make a decision to make it thread safe, it would be a huge
-performance hit for the single-threaded applications. So, it's a trade-off.
-We might not like it, but we have to live with it.
+We might not like this solution, but it’s the only way to make it work.
+The DOM API is designed to be single-threaded, and making it thread-safe would
+introduce a significant performance overhead for single-threaded applications.
+So, it’s a trade-off we have to live with.
 
-After this fix I ran the test again and it passed all the time. So, I decided
-to make a cup of coffee. When I returned, I've saw this:
+Finally, I ran the tests again, and they passed consistently…
+Until the 5518th run, when I got hit with the same `NullPointerException`.
+Seriously? What now?!
 
-```java
-Caused by:java.lang.NullPointerException
-    at java.xml/com.sun.org.apache.xerces.internal.dom.CoreDocumentImpl.getNodeListCache(CoreDocumentImpl.java:2283)
-    at java.xml/com.sun.org.apache.xerces.internal.dom.ParentNode.nodeListGetLength(ParentNode.java:690)
-    at java.xml/com.sun.org.apache.xerces.internal.dom.ParentNode.getLength(ParentNode.java:720)
-    at com.github.lombrozo.xnav.SafeXml.children(SafeXml.java:41)
-```
+## Attempt #3: The Stream API Strikes Back
 
-On the 5518th run, my test failed again. Any ideas? It took me a while to
-understand where the problem is. Seriously, try to find it. It might be
-exciting.
-
-Well, I can't spend your time anymore. The problem is within this fancy
-block of code:
+The problem was hiding in plain sight:
 
 ```java
 return Stream.iterate(0,idx->idx+1)
@@ -140,62 +136,62 @@ return Stream.iterate(0,idx->idx+1)
     .map(n->new SafeXml(this.doc,n));
 ```
 
-I personally enjoy using Java Stream API. It's short, concise, and powerful.
-Moreover, it's **lazy**. It means that the actual iteration happens not in this
-method, but when you call the `collect()` method. As you can see, in our case,
-we don't call it. We just build the stream and return it.
-So, the iteration happens somewhere outside, avoiding all the synchronization
-we've added.
+I like the **Java Stream API** — it’s elegant, concise, and powerful.
+But it’s also **lazy**, meaning that the actual iteration doesn’t happen inside 
+`children()` method. Instead, it happens **later**,
+when the stream is actually consumed when a terminal operation (like `collect()`)
+is called on it. This means that by
+the time the iteration happens, synchronization no longer applies.
 
-Hence, we need to collect all the children nodes eagerly. Here is how we can
-do it with the `Collectors.toList()` method:
+So, what’s the fix? Force eager evaluation before returning the stream.
+Here’s how:
+
+### Option 1: Collect to a List
 
 ```java
 return Stream.iterate(0,idx->idx+1)
     .limit(length)
     .map(nodes::item)
     .map(n->new SafeXml(this.doc,n))
-    .collect(Collectors.toList())
-    .stream();
+    .collect(Collectors.toList()) // Here we force eager evaluation
+    .stream();                    // and return a new stream
 ```
 
-Or by using the `Stream.Builder`:
+### Option 2: Use `Stream.Builder`
 
 ```java
-    public Stream<SafeXml> children() {
-        synchronized (this.doc) {
-            NodeList nodes = this.node.getChildNodes();
-            int length = nodes.getLength();
-            Stream.Builder<SafeXml> builder = Stream.builder();
-            for (int i = 0; i < length; i++) {
-                Node n = nodes.item(i);
-                builder.accept(new SafeXml(this.doc, n));
-            }
-            return builder.build();
-        }
+    public Stream<SafeXml> children(){
+synchronized (this.doc){
+    NodeList nodes=this.node.getChildNodes();
+    int length=nodes.getLength();
+    Stream.Builder<SafeXml> builder=Stream.builder();
+    for(int i=0;i<length; i++){
+    Node n=nodes.item(i);
+    builder.accept(new SafeXml(this.doc,n));
+    }
+    return builder.build();
+    }
     }
 ```
 
-Or even use the plain `ArrayList`:
+### Option 3: Use `ArrayList`
 
 ```java
-    public Stream<SafeXml> children() {
-        synchronized (this.doc) {
-            NodeList nodes = this.node.getChildNodes();
-            int length = nodes.getLength();
-            List<SafeXml> children = new ArrayList<>(length);
-            for (int i = 0; i < length; i++) {
-                Node n = nodes.item(i);
-                children.add(new SafeXml(this.doc, n));
-            }
-            return children.stream();
-        }
+    public Stream<SafeXml> children(){
+synchronized (this.doc){
+    NodeList nodes=this.node.getChildNodes();
+    int length=nodes.getLength();
+    List<SafeXml> children=new ArrayList<>(length);
+    for(int i=0;i<length; i++){
+    Node n=nodes.item(i);
+    children.add(new SafeXml(this.doc,n));
+    }
+    return children.stream();
+    }
     }
 ```
 
-
-However, according to the benchmarks, the solution with `Stream.Builder` is the
-fastest one:
+According to benchmarks, the `Stream.Builder` approach is the fastest:
 
 ```shell
 Benchmark                        Mode  Cnt  Score   Error  Units
@@ -204,7 +200,18 @@ SafeXmlBenchmark.collect_stream  avgt       1.360          us/op
 SafeXmlBenchmark.stream_builder  avgt       0.631          us/op
 ```
 
-So, we've finally fixed the synchronization leakage and understood that plain 
-using of Java Stream API might be rather tricky and require some additional
-attention. It's still not clear how to prevent such issues statically. The only
-way is to write tests and run them in parallel.
+## Final Thoughts
+
+So, we’ve finally fixed the issue. The main takeaways:
+
+- DOM nodes are not thread-safe. If you need to process them in parallel,
+synchronize on the entire document.
+- Java Streams are lazy—if you use them in a multi-threaded context, 
+be careful about where they’re evaluated.
+- Tests are your best friends, but sometimes they pass 5000 times before failing.
+
+And this wasn’t just a theoretical problem — this exact issue was found and 
+fixed in [a real project](https://github.com/volodya-lombrozo/xnav/pull/62). 
+If you're curious, you can check out the actual fix in this pull request.
+
+Happy coding! And watch out for those lazy streams!
