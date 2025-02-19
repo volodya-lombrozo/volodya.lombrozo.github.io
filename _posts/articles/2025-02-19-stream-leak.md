@@ -4,7 +4,7 @@ title: "Thread-Safety Pitfalls in XML Processing or How To Shoot Yourself in The
 date: 2025-02-19
 ---
 
-# Thread-Safety Pitfalls in XML Processing or How To Shoot Yourself in The Foot
+# Thread-Safety Pitfalls in XML Processing—or How to Shoot Yourself in the Foot with Java Streams
 
 Do you think the method `children()` below is thread-safe?
 
