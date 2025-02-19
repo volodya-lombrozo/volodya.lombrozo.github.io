@@ -14,20 +14,21 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public final class SafeXml {
-    private final Node node;
+  
+  private final Node node;
+  
+  SafeXml(final Node node) {
+    this.node = node.cloneNode(true);
+  }
 
-    SafeXml(final Node node) {
-        this.node = node.cloneNode(true);
-    }
-
-    public Stream<SafeXml> children() {
-        NodeList nodes = this.node.getChildNodes();
-        int length = nodes.getLength();
-        return Stream.iterate(0, idx -> idx + 1)
-            .limit(length)
-            .map(nodes::item)
-            .map(SafeXml::new);
-    }
+  public Stream<SafeXml> children() {
+    NodeList nodes = this.node.getChildNodes();
+    int length = nodes.getLength();
+    return Stream.iterate(0, idx -> idx + 1)
+      .limit(length)
+      .map(nodes::item)
+      .map(SafeXml::new);
+  }
 }
 ```
 
@@ -68,15 +69,15 @@ Alright, let’s follow the advice and add some synchronization:
 
 ```java
 public Stream<SafeXml> children(){
-synchronized (this.node){
-    NodeList nodes=this.node.getChildNodes();
-    int length=nodes.getLength();
-    return Stream.iterate(0,idx->idx+1)
+  synchronized (this.node){
+    NodeList nodes = this.node.getChildNodes();
+    int length = nodes.getLength();
+    return Stream.iterate(0, idx -> idx + 1)
     .limit(length)
     .map(nodes::item)
     .map(SafeXml::new);
-    }
-    }
+  }
+}
 ```
 
 Great! Now, let's test it — multiple threads calling `children()` in parallel.
@@ -85,8 +86,8 @@ pops up again. Wait, what?! Didn’t we **just** add synchronization?
 
 ## Attempt #2: Synchronize on the Document
 
-[I’ll save you some frustration:]??? the problem is that each DOM `Node` have some
-internal shared state (most likely a cache) across different `Node` instances.
+It turns out that each DOM `Node` has some internal shared state
+(most likely a cache) across different `Node` instances. 
 In other words, synchronizing on a single node isn’t enough — we have to lock
 the entire document.
 
@@ -95,24 +96,24 @@ So, we tweak our code:
 ```java
 public final class SafeXml {
 
-    private final Document doc;
-    private final Node node;
+  private final Document doc;
+  private final Node node;
 
-    SafeXml(final Document doc, final Node node) {
-        this.doc = doc;
-        this.node = node.cloneNode(true);
-    }
+  SafeXml(final Document doc, final Node node) {
+    this.doc = doc;
+    this.node = node.cloneNode(true);
+  }
 
-    public Stream<SafeXml> children() {
-        synchronized (this.doc) {
-            NodeList nodes = this.node.getChildNodes();
-            int length = nodes.getLength();
-            return Stream.iterate(0, idx -> idx + 1)
-                .limit(length)
-                .map(nodes::item)
-                .map(n -> new SafeXml(this.doc, n));
-        }
+  public Stream<SafeXml> children() {
+    synchronized (this.doc) {
+      NodeList nodes = this.node.getChildNodes();
+      int length = nodes.getLength();
+      return Stream.iterate(0, idx -> idx + 1)
+        .limit(length)
+        .map(nodes::item)
+        .map(n -> new SafeXml(this.doc, n));
     }
+  }
 }
 ```
 
@@ -121,7 +122,7 @@ The DOM API is designed to be single-threaded, and making it thread-safe would
 introduce a significant performance overhead for single-threaded applications.
 So, it’s a trade-off we have to live with.
 
-Finally, I ran the tests again, and they passed consistently…
+Finally, I ran the tests again, and they passed consistently...
 Until the 5518th run, when I got hit with the same `NullPointerException`.
 Seriously? What now?!
 
@@ -130,14 +131,14 @@ Seriously? What now?!
 The problem was hiding in plain sight:
 
 ```java
-return Stream.iterate(0,idx->idx+1)
-    .limit(length)
-    .map(nodes::item)
-    .map(n->new SafeXml(this.doc,n));
+return Stream.iterate(0, idx -> idx + 1)
+  .limit(length)
+  .map(nodes::item)
+  .map(n->new SafeXml(this.doc,n));
 ```
 
 I like the **Java Stream API** — it’s elegant, concise, and powerful.
-But it’s also **lazy**, meaning that the actual iteration doesn’t happen inside 
+But it’s also **lazy**, meaning that the actual iteration doesn’t happen inside
 `children()` method. Instead, it happens **later**,
 when the stream is actually consumed when a terminal operation (like `collect()`)
 is called on it. This means that by
@@ -149,46 +150,46 @@ Here’s how:
 ### Option 1: Collect to a List
 
 ```java
-return Stream.iterate(0,idx->idx+1)
-    .limit(length)
-    .map(nodes::item)
-    .map(n->new SafeXml(this.doc,n))
-    .collect(Collectors.toList()) // Here we force eager evaluation
-    .stream();                    // and return a new stream
+return Stream.iterate(0, idx -> idx + 1)
+  .limit(length)
+  .map(nodes::item)
+  .map(n->new SafeXml(this.doc,n))
+  .collect(Collectors.toList()) // Here we force eager evaluation
+  .stream();                    // and return a new stream
 ```
 
 ### Option 2: Use `Stream.Builder`
 
 ```java
-    public Stream<SafeXml> children(){
-synchronized (this.doc){
-    NodeList nodes=this.node.getChildNodes();
-    int length=nodes.getLength();
-    Stream.Builder<SafeXml> builder=Stream.builder();
-    for(int i=0;i<length; i++){
-    Node n=nodes.item(i);
-    builder.accept(new SafeXml(this.doc,n));
+public Stream<SafeXml> children(){
+  synchronized (this.doc){
+    NodeList nodes = this.node.getChildNodes();
+    int length = nodes.getLength();
+    Stream.Builder<SafeXml> builder = Stream.builder();
+    for(int i = 0; i < length; i++){
+      Node n = nodes.item(i);
+      builder.accept(new SafeXml(this.doc,n));
     }
     return builder.build();
-    }
-    }
+  }
+}
 ```
 
 ### Option 3: Use `ArrayList`
 
 ```java
-    public Stream<SafeXml> children(){
-synchronized (this.doc){
-    NodeList nodes=this.node.getChildNodes();
-    int length=nodes.getLength();
-    List<SafeXml> children=new ArrayList<>(length);
-    for(int i=0;i<length; i++){
-    Node n=nodes.item(i);
-    children.add(new SafeXml(this.doc,n));
+public Stream<SafeXml> children(){
+  synchronized (this.doc){
+    NodeList nodes = this.node.getChildNodes();
+    int length = nodes.getLength();
+    List<SafeXml> children = new ArrayList<>(length);
+    for(int i = 0; i < length; i++){
+      Node n = nodes.item(i);
+      children.add(new SafeXml(this.doc,n));
     }
     return children.stream();
-    }
-    }
+  }
+}
 ```
 
 According to benchmarks, the `Stream.Builder` approach is the fastest:
@@ -205,13 +206,15 @@ SafeXmlBenchmark.stream_builder  avgt       0.631          us/op
 So, we’ve finally fixed the issue. The main takeaways:
 
 - DOM nodes are not thread-safe. If you need to process them in parallel,
-synchronize on the entire document.
-- Java Streams are lazy—if you use them in a multi-threaded context, 
-be careful about where they’re evaluated.
-- Tests are your best friends, but sometimes they pass 5000 times before failing.
+  synchronize on the entire document.
+- Java Streams are lazy—if you use them in a multi-threaded context,
+  be careful about where they’re evaluated.
+- Tests are your best friends, but sometimes they pass 5000 times before
+  failing.
 
-And this wasn’t just a theoretical problem — this exact issue was found and 
-fixed in [a real project](https://github.com/volodya-lombrozo/xnav/pull/62). 
-If you're curious, you can check out the actual fix in this pull request.
+And this wasn’t just a theoretical problem — this exact issue was found and
+fixed in a real project.
+If you're curious, you can check out the actual fix
+in [this](https://github.com/volodya-lombrozo/xnav/pull/62) pull request.
 
 Happy coding! And watch out for those lazy streams!
