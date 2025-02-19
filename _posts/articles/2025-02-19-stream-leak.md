@@ -86,8 +86,8 @@ pops up again. Wait, what?! Didn’t we **just** add synchronization?
 
 ## Attempt #2: Synchronize on the Document
 
-It turns out that each DOM `Node` has some internal shared state
-(most likely a cache) across different `Node` instances. 
+It turns out that each DOM `Node` has internal shared state
+(likely a cache) across different `Node` instances. 
 In other words, synchronizing on a single node isn’t enough — we have to lock
 the entire document.
 
@@ -122,7 +122,7 @@ The DOM API is designed to be single-threaded, and making it thread-safe would
 introduce a significant performance overhead for single-threaded applications.
 So, it’s a trade-off we have to live with.
 
-Finally, I ran the tests again, and they passed consistently...
+Eventually, I ran the tests again, and they passed consistently...
 Until the 5518th run, when I got hit with the same `NullPointerException`.
 Seriously? What now?!
 
@@ -141,8 +141,9 @@ I like the **Java Stream API** — it’s elegant, concise, and powerful.
 But it’s also **lazy**, meaning that the actual iteration doesn’t happen inside
 `children()` method. Instead, it happens **later**,
 when the stream is actually consumed when a terminal operation (like `collect()`)
-is called on it. This means that by
-the time the iteration happens, synchronization no longer applies.
+is called on it.
+This means that by
+the time the real iteration happens, synchronization no longer applies.
 
 So, what’s the fix? Force eager evaluation before returning the stream.
 Here’s how:
