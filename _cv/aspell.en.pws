@@ -135,3 +135,5 @@ bytecode
 decompiler
 jsmith
 xnav
+observability
+disassembler
