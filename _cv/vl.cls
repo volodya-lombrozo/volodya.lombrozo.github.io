@@ -39,7 +39,7 @@
 \AtBeginDocument{%
 \setlength{\topskip}{0mm}
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{5pt}
+\setlength{\parskip}{4pt}
 \tolerance=2000
 \raggedbottom
 \large
