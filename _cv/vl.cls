@@ -46,7 +46,7 @@
 }
 
 \newcommand\vlPrintPhoto{
-\begin{textblock}{2.1}[1,0](14,1.5){
+\begin{textblock}{2.1}[1,0](14,1){
 \includegraphics[width=\textwidth]{github-avatar-3x4.jpg}
 }\end{textblock}
 }
