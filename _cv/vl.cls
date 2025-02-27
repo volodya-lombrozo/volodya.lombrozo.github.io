@@ -31,10 +31,7 @@
 \makeatletter\begingroup
 \catcode`\$=6
 \catcode`\#=12
-\gdef\href@split$1#$2#$3\\$4{
-    \hyper@@link{$1}{$2}{\uline{$4}}
-\endgroup
-}
+\gdef\href@split$1#$2#$3\\$4{\hyper@@link{$1}{$2}{\uline{$4}}\endgroup}
 \endgroup\makeatother
 
 \newcommand\nospell[1]{#1}
